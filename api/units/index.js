@@ -1,19 +1,16 @@
 const connectToDatabase = require('../utils/db.js');
 const Unit = require('../models/Unit.js');
 
-module.exports = async function handler(req, res) {
-  // CORS caching headers
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  )
+export default async function handler(req, res) {
+  // CORS caching headers as requested
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle OPTIONS preflight request
   if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
+    res.status(200).end();
+    return;
   }
 
   try {
@@ -55,6 +52,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error) {
+    console.error("API Error:", error);
     if (error.code === 11000) {
       return res.status(400).json({ error: 'Unit name already exists' });
     }
