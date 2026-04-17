@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
@@ -16,14 +16,15 @@ import UserAccess from './pages/UserAccess';
 import Login from './pages/Login';
 
 function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch { localStorage.removeItem('user'); }
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      localStorage.removeItem('user');
+      return null;
     }
-  }, []);
+  });
 
   const handleLogin = (userData) => { setUser(userData); };
 
