@@ -36,15 +36,41 @@ export default async function handler(req, res) {
       // Locations count
       const locationCount = await Location.countDocuments({});
 
-      // Low stock items: compute per-item stock and compare to minimumStockLevel
+      // Low stock items: Optimized to prevent N+1 query problem
       const items = await Item.find({}).populate('category', 'categoryName').populate('unit', 'unitName');
+      
+      // Get all stock in totals grouped by item
+      const allStockIn = await StockIn.aggregate([
+        { $group: { _id: '$itemName', total: { $sum: '$qtyReceived' } } }
+      ]);
+      
+      // Get all stock out totals grouped by item
+      const allStockOut = await StockOut.aggregate([
+        { $group: { _id: '$itemName', total: { $sum: '$qtyIssued' } } }
+      ]);
+      
+      // Create quick lookup maps
+      const inMap = allStockIn.reduce((acc, curr) => { 
+        if(curr._id) acc[curr._id.toString()] = curr.total; 
+        return acc; 
+      }, {});
+      
+      const outMap = allStockOut.reduce((acc, curr) => { 
+        if(curr._id) acc[curr._id.toString()] = curr.total; 
+        return acc; 
+      }, {});
+
       const lowStockItems = [];
       for (const item of items) {
-        const inAgg = await StockIn.aggregate([{ $match: { itemName: item._id } }, { $group: { _id: null, total: { $sum: '$qtyReceived' } } }]);
-        const outAgg = await StockOut.aggregate([{ $match: { itemName: item._id } }, { $group: { _id: null, total: { $sum: '$qtyIssued' } } }]);
-        const currentStock = (inAgg[0]?.total || 0) - (outAgg[0]?.total || 0);
+        const itemId = item._id.toString();
+        const currentStock = (inMap[itemId] || 0) - (outMap[itemId] || 0);
         if (currentStock <= item.minimumStockLevel) {
-          lowStockItems.push({ _id: item._id, itemName: item.itemName, currentStock, minimumStockLevel: item.minimumStockLevel });
+          lowStockItems.push({ 
+            _id: item._id, 
+            itemName: item.itemName, 
+            currentStock, 
+            minimumStockLevel: item.minimumStockLevel 
+          });
         }
       }
 
