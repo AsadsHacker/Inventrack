@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell, AlertTriangle, Menu, Search, Settings } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { getUser } from '../utils/auth';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -10,6 +11,8 @@ const TopBar = ({ sidebarOpen, setSidebarOpen }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [lowStockItems, setLowStockItems] = useState([]);
   const dropdownRef = useRef(null);
+  const user = getUser();
+  const isViewer = user?.role === 'Viewer';
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -88,6 +91,13 @@ const TopBar = ({ sidebarOpen, setSidebarOpen }) => {
               type="text" 
             />
           </div>
+        )}
+
+        {/* Viewer indicator badge */}
+        {isViewer && (
+          <span className="bg-[#EAB308]/10 text-[#F59E0B] border border-[#EAB308]/20 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider">
+            View Only Mode
+          </span>
         )}
 
         {/* Low Stock Alert Badge Button */}

@@ -14,6 +14,17 @@ import StockTransferPage from './pages/StockTransfer';
 import Reports from './pages/Reports';
 import UserAccess from './pages/UserAccess';
 import Login from './pages/Login';
+import { getUser, hasPermission } from './utils/auth';
+
+// Guard wrapper for User Access control interface
+const ProtectedUserAccess = () => {
+  const user = getUser();
+  const role = user?.role || 'Viewer';
+  if (!hasPermission(role, 'userAccess')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <UserAccess />;
+};
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -59,7 +70,7 @@ function App() {
           <Route path="/stock-out" element={<StockOutPage />} />
           <Route path="/stock-transfer" element={<StockTransferPage />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/user-access" element={<UserAccess />} />
+          <Route path="/user-access" element={<ProtectedUserAccess />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>

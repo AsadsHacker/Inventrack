@@ -3,9 +3,14 @@ import {
   LayoutDashboard, Ruler, Tag, Truck, Package, MapPin, 
   ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, BarChart3, Users, LogOut, X 
 } from 'lucide-react';
+import { getUser, hasPermission } from '../utils/auth';
 
 const Sidebar = ({ onLogout, sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
+  const user = getUser();
+  const username = user?.username || 'Guest';
+  const role = user?.role || 'Viewer';
+  const avatarLetter = username.charAt(0).toUpperCase();
 
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -20,6 +25,14 @@ const Sidebar = ({ onLogout, sidebarOpen, setSidebarOpen }) => {
     { name: 'Reports', path: '/reports', icon: BarChart3 },
     { name: 'User Access', path: '/user-access', icon: Users },
   ];
+
+  // Filter links dynamically based on user role permissions
+  const filteredLinks = navLinks.filter(link => {
+    if (link.path === '/user-access') {
+      return hasPermission(role, 'userAccess');
+    }
+    return true;
+  });
 
   return (
     <aside className={`w-[260px] h-screen fixed top-0 left-0 bg-[#161B22] text-[#E6EDF3] flex flex-col py-6 border-r border-white/5 z-30 transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -38,7 +51,7 @@ const Sidebar = ({ onLogout, sidebarOpen, setSidebarOpen }) => {
       
       <nav className="w-full flex-1 overflow-y-auto px-2 custom-scrollbar">
         <ul className="space-y-1">
-          {navLinks.map((link) => {
+          {filteredLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path || (location.pathname === '/' && link.path === '/dashboard');
             return (
@@ -64,16 +77,12 @@ const Sidebar = ({ onLogout, sidebarOpen, setSidebarOpen }) => {
       {/* User profile section at the bottom */}
       <div className="p-4 mt-auto border-t border-white/5">
         <div className="flex items-center gap-3 mb-4 px-2">
-          <div className="w-10 h-10 rounded-lg bg-[#1C2128] flex items-center justify-center border border-white/5 overflow-hidden">
-            <img 
-              alt="User profile" 
-              className="w-full h-full object-cover" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCF3Kwe3Ol9xoFKTuke4A2q9PRiab3afmTU6-A4rKyLY0yCiCWl4oU0FZxOWFMMz4RyJQKfVpgWeAtwKa16noJTKNoD20L3n_GXjKHEuMkXC-QOVF4RMmkhdWgc4Pvh_h_Yi_azln0fakXYartMV6YwGO45Bfk4uo-6HWTYEtJgj84FtaFTnEKRHOvr5amQrfhDpOrcpkPByhLV3cLxLD2IRc3V5lC04FHVpIdh25aPDD2G05eXkdBaSNnxs0C2SqLAks8z3W6nuv56"
-            />
+          <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 border border-[#2563EB]/20 text-[#58A6FF] font-bold text-lg flex items-center justify-center font-mono">
+            {avatarLetter}
           </div>
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-mono truncate text-[#E6EDF3]">A. Sterling</p>
-            <p className="text-[10px] uppercase tracking-widest text-[#8B949E] font-mono">Admin Rail</p>
+            <p className="text-sm font-mono truncate text-[#E6EDF3]">{username}</p>
+            <p className="text-[10px] uppercase tracking-widest text-[#8B949E] font-mono">{role}</p>
           </div>
         </div>
 

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Trash2, Search, Loader2, Info, Lock, Download, Database, 
-  ShieldAlert, Calendar, User, Tag, MapPin, ClipboardList, Hash
+  ShieldAlert, Hash
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getUser, hasPermission } from '../utils/auth';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -36,6 +37,12 @@ const StockIn = () => {
   // Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  // User permissions
+  const user = getUser();
+  const role = user?.role || 'Viewer';
+  const canAdd = hasPermission(role, 'add');
+  const canDelete = hasPermission(role, 'delete');
 
   useEffect(() => {
     fetchData();
@@ -190,6 +197,8 @@ const StockIn = () => {
     return data.reduce((sum, item) => sum + (item.qtyReceived || 0), 0);
   };
 
+  const showForm = canAdd;
+
   return (
     <div className="space-y-6 text-[#E6EDF3] animate-fade-in pb-10">
       
@@ -212,161 +221,163 @@ const StockIn = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column - Form Card */}
-        <div className="col-span-12 lg:col-span-4 bg-[#161B22] border border-white/5 rounded-xl p-6 skeuo-shadow">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6">
-            <span className="text-[10px] font-mono tracking-widest text-[#8B949E] uppercase font-bold flex items-center gap-1.5">
-              <Database size={12} className="text-[#58A6FF]" />
-              NEW ENTRY
-            </span>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-[10px] font-mono text-[#8B949E] uppercase tracking-wider mb-1.5 block">
-                GRN Identifier
-              </label>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={formData.grnNo}
-                  readOnly
-                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 pl-3 pr-10 text-xs font-mono text-[#8B949E] outline-none cursor-not-allowed"
-                />
-                <Lock size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B949E]/50" />
-              </div>
-              <span className="text-[9px] font-mono text-[#8B949E]/70 mt-1 block">
-                Auto-assigned sequentially upon submission.
+        {showForm && (
+          <div className="col-span-12 lg:col-span-4 bg-[#161B22] border border-white/5 rounded-xl p-6 skeuo-shadow">
+            <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6">
+              <span className="text-[10px] font-mono tracking-widest text-[#8B949E] uppercase font-bold flex items-center gap-1.5">
+                <Database size={12} className="text-[#58A6FF]" />
+                NEW ENTRY
               </span>
             </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                GRN Date <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <input 
-                  type="date" 
-                  value={formData.grnDate}
-                  onChange={(e) => setFormData({ ...formData, grnDate: e.target.value })}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-mono text-[#8B949E] uppercase tracking-wider mb-1.5 block">
+                  GRN Identifier
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={formData.grnNo}
+                    readOnly
+                    className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 pl-3 pr-10 text-xs font-mono text-[#8B949E] outline-none cursor-not-allowed"
+                  />
+                  <Lock size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B949E]/50" />
+                </div>
+                <span className="text-[9px] font-mono text-[#8B949E]/70 mt-1 block">
+                  Auto-assigned sequentially upon submission.
+                </span>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  GRN Date <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={formData.grnDate}
+                    onChange={(e) => setFormData({ ...formData, grnDate: e.target.value })}
+                    required
+                    className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  Supplier Source <span className="text-red-400">*</span>
+                </label>
+                <select 
+                  value={formData.supplierName}
+                  onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
                   required
                   className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="" className="bg-[#161B22]">Select Supplier</option>
+                  <option value="In House Production" className="bg-[#161B22]">In House Production</option>
+                  {suppliers.map(s => (
+                    <option key={s._id} value={s.supplierName} className="bg-[#161B22]">{s.supplierName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  PO Reference
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.purchaseOrderRef}
+                  onChange={(e) => setFormData({ ...formData, purchaseOrderRef: e.target.value })}
+                  placeholder="E.g. PO-2026-001"
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                Supplier Source <span className="text-red-400">*</span>
-              </label>
-              <select 
-                value={formData.supplierName}
-                onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
-                required
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
-              >
-                <option value="" className="bg-[#161B22]">Select Supplier</option>
-                <option value="In House Production" className="bg-[#161B22]">In House Production</option>
-                {suppliers.map(s => (
-                  <option key={s._id} value={s.supplierName} className="bg-[#161B22]">{s.supplierName}</option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  Target Item <span className="text-red-400">*</span>
+                </label>
+                <select 
+                  value={formData.itemName}
+                  onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                  required
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="" className="bg-[#161B22]">Select Item</option>
+                  {items.map(i => (
+                    <option key={i._id} value={i._id} className="bg-[#161B22]">{i.itemName}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                PO Reference
-              </label>
-              <input 
-                type="text" 
-                value={formData.purchaseOrderRef}
-                onChange={(e) => setFormData({ ...formData, purchaseOrderRef: e.target.value })}
-                placeholder="E.g. PO-2026-001"
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
-              />
-            </div>
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  Quantity Received <span className="text-red-400">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  min="1"
+                  value={formData.qtyReceived}
+                  onChange={(e) => setFormData({ ...formData, qtyReceived: e.target.value })}
+                  required
+                  placeholder="Units received count"
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
+                />
+              </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                Target Item <span className="text-red-400">*</span>
-              </label>
-              <select 
-                value={formData.itemName}
-                onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-                required
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
-              >
-                <option value="" className="bg-[#161B22]">Select Item</option>
-                {items.map(i => (
-                  <option key={i._id} value={i._id} className="bg-[#161B22]">{i.itemName}</option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  Warehouse Location <span className="text-red-400">*</span>
+                </label>
+                <select 
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  required
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="" className="bg-[#161B22]">Select Location</option>
+                  {locations.map(l => (
+                    <option key={l._id} value={l._id} className="bg-[#161B22]">{l.locationName}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                Quantity Received <span className="text-red-400">*</span>
-              </label>
-              <input 
-                type="number" 
-                min="1"
-                value={formData.qtyReceived}
-                onChange={(e) => setFormData({ ...formData, qtyReceived: e.target.value })}
-                required
-                placeholder="Units received count"
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
-              />
-            </div>
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
+                  Operational Remarks
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.remarks}
+                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                  placeholder="Optional notes"
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
+                />
+              </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                Warehouse Location <span className="text-red-400">*</span>
-              </label>
-              <select 
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                required
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
-              >
-                <option value="" className="bg-[#161B22]">Select Location</option>
-                {locations.map(l => (
-                  <option key={l._id} value={l._id} className="bg-[#161B22]">{l.locationName}</option>
-                ))}
-              </select>
-            </div>
+              <div className="bg-[#1C2128] border border-white/5 p-3 rounded-lg flex items-start gap-2.5 text-[10px] text-[#8B949E]">
+                <Info size={14} className="text-[#58A6FF] shrink-0 mt-0.5" />
+                <span>Submitting a GRN directly updates inventory balances at the selected warehouse location.</span>
+              </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-1.5 block">
-                Operational Remarks
-              </label>
-              <input 
-                type="text" 
-                value={formData.remarks}
-                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                placeholder="Optional notes"
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 px-3 text-xs text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all"
-              />
-            </div>
-
-            <div className="bg-[#1C2128] border border-white/5 p-3 rounded-lg flex items-start gap-2.5 text-[10px] text-[#8B949E]">
-              <Info size={14} className="text-[#58A6FF] shrink-0 mt-0.5" />
-              <span>Submitting a GRN directly updates inventory balances at the selected warehouse location.</span>
-            </div>
-
-            <div className="pt-2">
-              <button 
-                type="submit" 
-                disabled={saving}
-                className="w-full bg-[#2563EB] hover:bg-[#2563EB]/85 text-white font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider skeuo-shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
-              >
-                {saving && <Loader2 size={12} className="animate-spin" />}
-                <span>Save GRN Entry</span>
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="pt-2">
+                <button 
+                  type="submit" 
+                  disabled={saving}
+                  className="w-full bg-[#2563EB] hover:bg-[#2563EB]/85 text-white font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider skeuo-shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {saving && <Loader2 size={12} className="animate-spin" />}
+                  <span>Save GRN Entry</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Right Column - Data Table Card */}
-        <div className="col-span-12 lg:col-span-8 bg-[#161B22] border border-white/5 rounded-xl overflow-hidden skeuo-shadow">
+        <div className={`col-span-12 ${showForm ? 'lg:col-span-8' : 'lg:col-span-12'} bg-[#161B22] border border-white/5 rounded-xl overflow-hidden skeuo-shadow`}>
           <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/2">
             <h3 className="text-sm font-bold text-[#E6EDF3] font-mono uppercase tracking-wider flex items-center gap-2">
               <Database size={14} className="text-[#58A6FF]" />
@@ -399,7 +410,7 @@ const StockIn = () => {
                     <th className="px-6 py-3.5">Item</th>
                     <th className="px-6 py-3.5">Qty</th>
                     <th className="px-6 py-3.5">Location</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
+                    {canDelete && <th className="px-6 py-3.5 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -413,17 +424,19 @@ const StockIn = () => {
                       <td className="px-6 py-3 text-xs font-bold text-[#E6EDF3] whitespace-nowrap">{item.itemName?.itemName || 'N/A'}</td>
                       <td className="px-6 py-3 text-xs font-bold text-[#22C55E] font-mono whitespace-nowrap">+{item.qtyReceived}</td>
                       <td className="px-6 py-3 text-xs text-[#8B949E] whitespace-nowrap">{item.location?.locationName || 'N/A'}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end">
-                          <button 
-                            onClick={() => confirmDelete(item)}
-                            className="p-1.5 bg-[#EF4444]/10 text-red-400 rounded hover:bg-[#EF4444]/25 border border-red-500/20 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
+                      {canDelete && (
+                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end">
+                            <button 
+                              onClick={() => confirmDelete(item)}
+                              className="p-1.5 bg-[#EF4444]/10 text-red-400 rounded hover:bg-[#EF4444]/25 border border-red-500/20 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

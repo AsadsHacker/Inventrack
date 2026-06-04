@@ -5,6 +5,7 @@ import {
   ShieldAlert, Lock, Download, Database
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getUser, hasPermission } from '../utils/auth';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -30,6 +31,13 @@ const LocationEntries = () => {
   // Delete Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  // User permissions
+  const user = getUser();
+  const role = user?.role || 'Viewer';
+  const canAdd = hasPermission(role, 'add');
+  const canEdit = hasPermission(role, 'edit');
+  const canDelete = hasPermission(role, 'delete');
 
   useEffect(() => { 
     fetchData(); 
@@ -107,14 +115,14 @@ const LocationEntries = () => {
       toast.error("No data to export");
       return;
     }
-    const headers = ["ID", "CODE", "LOCATION NAME", "CREATED AT"];
+    const headers = ["ID", "CODE", "NAME", "CREATED AT"];
     const csvRows = [
       headers.join(','),
-      ...data.map(l => [
-        `"${l.recordId}"`,
-        `"${l.locationCode.replace(/"/g, '""')}"`,
-        `"${l.locationName.replace(/"/g, '""')}"`,
-        `"${l.createdAt ? new Date(l.createdAt).toLocaleString() : 'N/A'}"`
+      ...data.map(item => [
+        `"${item.recordId}"`,
+        `"${item.locationCode}"`,
+        `"${item.locationName}"`,
+        `"${item.createdAt ? new Date(item.createdAt).toLocaleString() : 'N/A'}"`
       ].join(','))
     ];
     const csvString = csvRows.join('\n');
@@ -122,25 +130,25 @@ const LocationEntries = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'inventory_locations.csv');
+    link.setAttribute('download', 'locations.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     toast.success("CSV file downloaded");
   };
 
-  const filtered = data.filter(d => 
-    d.locationCode.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    d.locationName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    d.recordId.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLocations = data.filter(item => 
+    item.locationCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.locationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.recordId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination bounds
-  const totalRecords = filtered.length;
+  const totalRecords = filteredLocations.length;
   const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalRecords);
-  const paginatedLocations = filtered.slice(startIndex, endIndex);
+  const paginatedLocations = filteredLocations.slice(startIndex, endIndex);
 
   const handlePageChange = (direction) => {
     if (direction === 'prev' && currentPage > 1) {
@@ -150,10 +158,9 @@ const LocationEntries = () => {
     }
   };
 
-  // Stats calculators
   const getLastIngestion = () => {
     if (!data || !data.length) return "N/A";
-    const dates = data.map(l => l.createdAt ? new Date(l.createdAt).getTime() : 0).filter(d => d > 0);
+    const dates = data.map(u => u.createdAt ? new Date(u.createdAt).getTime() : 0).filter(d => d > 0);
     if (!dates.length) return "N/A";
     const latest = Math.max(...dates);
     const diff = Date.now() - latest;
@@ -164,6 +171,8 @@ const LocationEntries = () => {
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${Math.floor(diffHours / 24)}d ago`;
   };
+
+  const showForm = canAdd || canEdit;
 
   return (
     <div className="space-y-6 text-[#E6EDF3] animate-fade-in pb-10">
@@ -187,101 +196,103 @@ const LocationEntries = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column - Form Card */}
-        <div className="col-span-12 lg:col-span-4 bg-[#161B22] border border-white/5 rounded-xl p-6 skeuo-shadow">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6">
-            <span className="text-[10px] font-mono tracking-widest text-[#8B949E] uppercase font-bold flex items-center gap-1.5">
-              <Database size={12} className="text-[#58A6FF]" />
-              {isEditing ? 'EDIT ENTRY' : 'NEW ENTRY'}
-            </span>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="text-[10px] font-mono text-[#8B949E] uppercase tracking-wider mb-2 block">
-                Record Identifier
-              </label>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={formData.recordId}
-                  readOnly
-                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 pl-3 pr-10 text-xs font-mono text-[#8B949E] outline-none cursor-not-allowed"
-                />
-                <Lock size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B949E]/50" />
-              </div>
-              <span className="text-[9px] font-mono text-[#8B949E]/70 mt-1 block">
-                Automatically generated on commit.
+        {showForm && (
+          <div className="col-span-12 lg:col-span-4 bg-[#161B22] border border-white/5 rounded-xl p-6 skeuo-shadow">
+            <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6">
+              <span className="text-[10px] font-mono tracking-widest text-[#8B949E] uppercase font-bold flex items-center gap-1.5">
+                <Database size={12} className="text-[#58A6FF]" />
+                {isEditing ? 'EDIT ENTRY' : 'NEW ENTRY'}
               </span>
             </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-2 block">
-                Location Code <span className="text-red-400">*</span>
-              </label>
-              <input 
-                type="text" 
-                value={formData.locationCode}
-                onChange={(e) => setFormData({...formData, locationCode: e.target.value.toUpperCase()})}
-                placeholder="E.g. WH-01"
-                required
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2.5 px-3 text-sm text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all uppercase font-semibold"
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="text-[10px] font-mono text-[#8B949E] uppercase tracking-wider mb-2 block">
+                  Record Identifier
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={formData.recordId}
+                    readOnly
+                    className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2 pl-3 pr-10 text-xs font-mono text-[#8B949E] outline-none cursor-not-allowed"
+                  />
+                  <Lock size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B949E]/50" />
+                </div>
+                <span className="text-[9px] font-mono text-[#8B949E]/70 mt-1 block">
+                  Automatically generated on commit.
+                </span>
+              </div>
 
-            <div>
-              <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-2 block">
-                Location Name <span className="text-red-400">*</span>
-              </label>
-              <input 
-                type="text" 
-                value={formData.locationName}
-                onChange={(e) => setFormData({...formData, locationName: e.target.value})}
-                placeholder="E.g. Main Warehouse"
-                required
-                className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2.5 px-3 text-sm text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all font-semibold"
-              />
-            </div>
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-2 block">
+                  Location Code <span className="text-red-400">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.locationCode}
+                  onChange={(e) => setFormData({...formData, locationCode: e.target.value.toUpperCase()})}
+                  placeholder="E.g. WH-01"
+                  required
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2.5 px-3 text-sm text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all uppercase font-semibold"
+                />
+              </div>
 
-            <div className="bg-[#1C2128] border border-white/5 p-3 rounded-lg flex items-start gap-2.5 text-[10px] text-[#8B949E]">
-              <Info size={14} className="text-[#58A6FF] shrink-0 mt-0.5" />
-              <span>Ensure location codes are unique and descriptive (e.g. WH-01-A) to prevent scanning and picking delays in physical stock transfers.</span>
-            </div>
+              <div>
+                <label className="text-[10px] font-mono text-[#E6EDF3] uppercase tracking-wider mb-2 block">
+                  Location Name <span className="text-red-400">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.locationName}
+                  onChange={(e) => setFormData({...formData, locationName: e.target.value})}
+                  placeholder="E.g. Main Warehouse"
+                  required
+                  className="w-full bg-[#1C2128] border border-white/5 rounded-lg py-2.5 px-3 text-sm text-[#E6EDF3] placeholder:text-[#8B949E]/30 focus:ring-1 focus:ring-[#2563EB] focus:border-transparent outline-none transition-all font-semibold"
+                />
+              </div>
 
-            <div className="pt-2">
-              {isEditing ? (
-                <div className="flex gap-3">
+              <div className="bg-[#1C2128] border border-white/5 p-3 rounded-lg flex items-start gap-2.5 text-[10px] text-[#8B949E]">
+                <Info size={14} className="text-[#58A6FF] shrink-0 mt-0.5" />
+                <span>Ensure location codes are unique and descriptive (e.g. WH-01-A) to prevent scanning and picking delays in physical stock transfers.</span>
+              </div>
+
+              <div className="pt-2">
+                {isEditing ? (
+                  <div className="flex gap-3">
+                    <button 
+                      type="submit" 
+                      disabled={saving}
+                      className="flex-1 bg-[#2563EB] hover:bg-[#2563EB]/85 text-white font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider skeuo-shadow flex items-center justify-center gap-1.5"
+                    >
+                      {saving && <Loader2 size={12} className="animate-spin" />}
+                      <span>Update</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={resetForm}
+                      className="flex-1 bg-transparent hover:bg-white/5 border border-white/5 text-[#E6EDF3] font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
                   <button 
                     type="submit" 
                     disabled={saving}
-                    className="flex-1 bg-[#2563EB] hover:bg-[#2563EB]/85 text-white font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider skeuo-shadow flex items-center justify-center gap-1.5"
+                    className="w-full bg-[#2563EB] hover:bg-[#2563EB]/85 text-white font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider skeuo-shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     {saving && <Loader2 size={12} className="animate-spin" />}
-                    <span>Update</span>
+                    <span>Save Location Entry</span>
                   </button>
-                  <button 
-                    type="button" 
-                    onClick={resetForm}
-                    className="flex-1 bg-transparent hover:bg-white/5 border border-white/5 text-[#E6EDF3] font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  type="submit" 
-                  disabled={saving}
-                  className="w-full bg-[#2563EB] hover:bg-[#2563EB]/85 text-white font-medium py-2.5 rounded-lg transition-all text-xs font-mono uppercase tracking-wider skeuo-shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  {saving && <Loader2 size={12} className="animate-spin" />}
-                  <span>Save Location Entry</span>
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Right Column - Data Table Card */}
-        <div className="col-span-12 lg:col-span-8 bg-[#161B22] border border-white/5 rounded-xl overflow-hidden skeuo-shadow">
+        <div className={`col-span-12 ${showForm ? 'lg:col-span-8' : 'lg:col-span-12'} bg-[#161B22] border border-white/5 rounded-xl overflow-hidden skeuo-shadow`}>
           <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/2">
             <h3 className="text-sm font-bold text-[#E6EDF3] font-mono uppercase tracking-wider flex items-center gap-2">
               <Database size={14} className="text-[#58A6FF]" />
@@ -312,7 +323,7 @@ const LocationEntries = () => {
                     <th className="px-6 py-3.5">Code</th>
                     <th className="px-6 py-3.5">Name</th>
                     <th className="px-6 py-3.5">Last Modified</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
+                    {(canEdit || canDelete) && <th className="px-6 py-3.5 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -324,24 +335,30 @@ const LocationEntries = () => {
                       <td className="px-6 py-3 text-xs text-[#8B949E] font-mono whitespace-nowrap">
                         {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'N/A'}
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2.5">
-                          <button 
-                            onClick={() => editItem(item)}
-                            className="p-1.5 bg-[#2563EB]/10 text-[#58A6FF] rounded hover:bg-[#2563EB]/25 border border-[#2563EB]/20 transition-colors"
-                            title="Edit"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                          <button 
-                            onClick={() => confirmDelete(item)}
-                            className="p-1.5 bg-[#EF4444]/10 text-red-400 rounded hover:bg-[#EF4444]/25 border border-red-500/20 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
+                      {(canEdit || canDelete) && (
+                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2.5">
+                            {canEdit && (
+                              <button 
+                                onClick={() => editItem(item)}
+                                className="p-1.5 bg-[#2563EB]/10 text-[#58A6FF] rounded hover:bg-[#2563EB]/25 border border-[#2563EB]/20 transition-colors"
+                                title="Edit"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button 
+                                onClick={() => confirmDelete(item)}
+                                className="p-1.5 bg-[#EF4444]/10 text-red-400 rounded hover:bg-[#EF4444]/25 border border-red-500/20 transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

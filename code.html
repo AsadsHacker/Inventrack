@@ -1,0 +1,580 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>InventTrack - Industrial Intel Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#0b1326",
+                    "signal-teal": "#14B8A6",
+                    "tertiary": "#ffb2b7",
+                    "on-tertiary": "#67001b",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed": "#40000d",
+                    "inverse-on-surface": "#283044",
+                    "surface-variant": "#2d3449",
+                    "primary-fixed-dim": "#adc6ff",
+                    "primary-fixed": "#d8e2ff",
+                    "on-primary-container": "#00285c",
+                    "background": "#0b1326",
+                    "on-primary-fixed": "#001a41",
+                    "surface-container-lowest": "#060e20",
+                    "on-primary": "#002e69",
+                    "on-secondary-container": "#5b3800",
+                    "on-tertiary-container": "#5b0017",
+                    "on-error-container": "#ffdad6",
+                    "error": "#ffb4ab",
+                    "on-tertiary-fixed-variant": "#92002a",
+                    "inverse-surface": "#dae2fd",
+                    "inverse-primary": "#005bc1",
+                    "secondary": "#ffb95f",
+                    "secondary-fixed-dim": "#ffb95f",
+                    "glass-surface": "rgba(30, 41, 59, 0.7)",
+                    "tertiary-container": "#ff516a",
+                    "surface-container-highest": "#2d3449",
+                    "signal-blue": "#007AFF",
+                    "surface-container": "#171f33",
+                    "tertiary-fixed": "#ffdadb",
+                    "primary": "#adc6ff",
+                    "on-surface": "#dae2fd",
+                    "tertiary-fixed-dim": "#ffb2b7",
+                    "secondary-container": "#ee9800",
+                    "error-container": "#93000a",
+                    "signal-amber": "#F59E0B",
+                    "secondary-fixed": "#ffddb8",
+                    "surface-container-high": "#222a3d",
+                    "surface-tint": "#adc6ff",
+                    "slate-950": "#020617",
+                    "on-primary-fixed-variant": "#004493",
+                    "surface-container-low": "#131b2e",
+                    "signal-rose": "#F43F5E",
+                    "on-background": "#dae2fd",
+                    "on-surface-variant": "#c1c6d7",
+                    "outline": "#8b90a0",
+                    "on-secondary-fixed": "#2a1700",
+                    "on-secondary": "#472a00",
+                    "outline-variant": "#414755",
+                    "on-secondary-fixed-variant": "#653e00",
+                    "surface": "#0b1326",
+                    "slate-50": "#F8FAFC",
+                    "surface-bright": "#31394d",
+                    "primary-container": "#4b8eff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-sm": "12px",
+                    "margin-md": "24px",
+                    "unit": "4px",
+                    "margin-lg": "40px",
+                    "gutter": "16px",
+                    "bento-gap": "16px"
+            },
+            "fontFamily": {
+                    "display-kpi": ["Hanken Grotesk"],
+                    "data-mono": ["JetBrains Mono"],
+                    "label-caps": ["JetBrains Mono"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "display-kpi": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-blur {
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .skeuo-shadow {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+        .bento-card {
+            @apply border border-outline-variant bg-surface-container rounded-xl skeuo-shadow transition-all duration-300;
+        }
+        .bento-card:hover {
+            @apply border-primary/30 bg-surface-container-high;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #414755; border-radius: 10px; }
+        
+        /* Forecasting Chart Visuals */
+        .chart-grid {
+            background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .voxel-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            perspective: 1000px;
+        }
+        .voxel {
+            aspect-ratio: 1;
+            transform: translateZ(var(--z, 0px)) rotateX(5deg);
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary selection:text-on-primary">
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 flex flex-col bg-surface-container dark:bg-surface-container border-r border-outline-variant dark:border-outline-variant shadow-md">
+<div class="p-6">
+<h1 class="text-headline-md font-headline-md font-bold text-signal-blue dark:text-signal-blue">InventTrack</h1>
+<p class="text-label-caps font-label-caps text-on-surface-variant opacity-70">Industrial Intel</p>
+</div>
+<nav class="flex-1 overflow-y-auto custom-scrollbar px-2 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 bg-surface-container-high dark:bg-surface-container-high text-primary dark:text-primary font-bold border-r-4 border-primary transition-all duration-150 scale-[0.98]" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-caps font-label-caps">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">straighten</span>
+<span class="text-label-caps font-label-caps">Unit Entry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="text-label-caps font-label-caps">Category Entry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">factory</span>
+<span class="text-label-caps font-label-caps">Supplier Entry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-label-caps font-label-caps">Item Entries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="text-label-caps font-label-caps">Location Entries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">input</span>
+<span class="text-label-caps font-label-caps">Stock In</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">output</span>
+<span class="text-label-caps font-label-caps">Stock Out</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">sync_alt</span>
+<span class="text-label-caps font-label-caps">Stock Transfer</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-caps font-label-caps">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+<span class="text-label-caps font-label-caps">User Access</span>
+</a>
+</nav>
+<div class="p-4 mt-auto border-t border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center border border-outline-variant overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCF3Kwe3Ol9xoFKTuke4A2q9PRiab3afmTU6-A4rKyLY0yCiCWl4oU0FZxOWFMMz4RyJQKfVpgWeAtwKa16noJTKNoD20L3n_GXjKHEuMkXC-QOVF4RMmkhdWgc4Pvh_h_Yi_azln0fakXYartMV6YwGO45Bfk4uo-6HWTYEtJgj84FtaFTnEKRHOvr5amQrfhDpOrcpkPByhLV3cLxLD2IRc3V5lC04FHVpIdh25aPDD2G05eXkdBaSNnxs0C2SqLAks8z3W6nuv56">
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-data-mono font-data-mono truncate">A. Sterling</p>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant">Admin Rail</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-64 h-16 z-30 flex justify-between items-center px-margin-md bg-glass-surface dark:bg-glass-surface backdrop-blur-xl border-b border-outline-variant dark:border-outline-variant shadow-sm">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-full py-2 pl-10 pr-4 text-data-mono font-data-mono focus:ring-2 focus:ring-signal-blue focus:border-transparent outline-none transition-all placeholder:text-on-surface-variant/50" placeholder="Search Inventory, Units, or Assets..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="group flex items-center gap-2 px-4 py-1.5 bg-signal-rose/10 border border-signal-rose/30 text-signal-rose rounded-full hover:bg-signal-rose/20 transition-all">
+<span class="material-symbols-outlined text-[18px] animate-pulse">warning</span>
+<span class="text-data-mono font-data-mono">Low Stock Alert</span>
+<span class="bg-signal-rose text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
+</button>
+<div class="flex items-center gap-3">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications_active</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-20 px-margin-md pb-margin-lg">
+<!-- Welcome Header -->
+<section class="mb-gutter mt-4 -mt-4">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-1">Operational Overview</h2>
+<p class="text-body-md text-on-surface-variant">Real-time telemetry and supply chain intelligence.</p>
+</section>
+<!-- Bento Grid Metrics -->
+<div class="grid grid-cols-12 gap-bento-gap mb-2">
+<!-- Main KPI: Total Stock -->
+<div class="col-span-12 lg:col-span-6 bento-card p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Total Aggregated Stock</span>
+<span class="material-symbols-outlined text-signal-blue">inventory</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-display-kpi text-display-kpi text-on-surface">1,020</span>
+<span class="text-signal-teal text-data-mono font-data-mono flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +4.2%
+                    </span>
+</div>
+</div>
+<div class="h-16 w-full mt-4 bg-gradient-to-t from-signal-blue/10 to-transparent rounded-lg border-b border-signal-blue/20 flex items-end">
+<div class="flex items-end gap-1 w-full h-8 px-2">
+<div class="flex-1 bg-signal-blue/40 h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/40 h-[60%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/40 h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/40 h-[80%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/40 h-[70%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/40 h-[90%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/40 h-[85%] rounded-t-sm"></div>
+<div class="flex-1 bg-signal-blue/60 h-[100%] rounded-t-sm shadow-[0_0_10px_rgba(0,122,255,0.4)]"></div>
+</div>
+</div>
+</div>
+<!-- Secondary KPI: Low Stock -->
+<div class="col-span-12 md:col-span-6 lg:col-span-3 bento-card p-6 border-signal-rose/20 bg-gradient-to-br from-surface-container to-signal-rose/5">
+<div class="flex justify-between items-start mb-8">
+<span class="text-label-caps font-label-caps text-signal-rose">Critical Alerts</span>
+<span class="material-symbols-outlined text-signal-rose">emergency_home</span>
+</div>
+<div class="mb-2">
+<span class="font-display-kpi text-display-kpi text-signal-rose">2</span>
+</div>
+<p class="text-data-mono font-data-mono text-on-surface-variant">Low Stock Items</p>
+</div>
+<!-- Secondary KPI: Warehouses -->
+<div class="col-span-12 md:col-span-6 lg:col-span-3 bento-card p-6">
+<div class="flex justify-between items-start mb-8">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Active Nodes</span>
+<span class="material-symbols-outlined text-primary">warehouse</span>
+</div>
+<div class="mb-2">
+<span class="font-display-kpi text-display-kpi text-on-surface">3</span>
+</div>
+<p class="text-data-mono font-data-mono text-on-surface-variant">Industrial Warehouses</p>
+</div>
+<!-- NEW: Stock Velocity & Forecasting Widget -->
+<div class="col-span-12 lg:col-span-8 bento-card overflow-hidden">
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center bg-surface-container-high/30">
+<div>
+<h3 class="text-headline-md font-headline-md leading-tight">Stock Velocity &amp; Forecasting</h3>
+<p class="text-label-caps text-on-surface-variant text-[10px]">Predicted Stock Levels - 30 Day Outlook</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-signal-blue"></span>
+<span class="text-data-mono text-[10px]">ACTUAL</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full border border-signal-blue/50 border-dashed"></span>
+<span class="text-data-mono text-[10px]">PREDICTED</span>
+</div>
+</div>
+</div>
+<div class="h-64 relative chart-grid p-6">
+<!-- Forecast Visualization -->
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 800 200">
+<!-- Confidence Ribbon -->
+<path d="M0,140 L100,130 L200,110 L300,105 L400,90 L500,100 L600,120 L700,135 L800,145 L800,175 L700,165 L600,150 L500,130 L400,120 L300,135 L200,140 L100,160 L0,170 Z" fill="rgba(0, 122, 255, 0.08)"></path>
+<!-- Predicted Line (Dashed) -->
+<polyline fill="none" points="0,155 100,145 200,125 300,120 400,105 500,115 600,135 700,150 800,160" stroke="#007AFF" stroke-dasharray="6,4" stroke-opacity="0.5" stroke-width="2"></polyline>
+<!-- Actual Line -->
+<polyline fill="none" points="0,150 100,140 200,120 300,130 400,110" stroke="#007AFF" stroke-width="3"></polyline>
+<!-- Current Marker -->
+<circle cx="400" cy="110" fill="#007AFF" r="5"></circle>
+<line stroke="white" stroke-dasharray="2,2" stroke-opacity="0.3" x1="400" x2="400" y1="0" y2="200"></line>
+</svg>
+<!-- Forecast Label -->
+<div class="absolute top-10 left-[410px] glass-blur border border-outline-variant p-2 rounded-lg bg-surface-container-low/80">
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Projected Dip</p>
+<p class="text-data-mono text-signal-rose">-12% Supply</p>
+</div>
+</div>
+</div>
+<!-- NEW: Spatial Utilization Heatmap -->
+<div class="col-span-12 lg:col-span-4 bento-card flex flex-col p-6">
+<div class="mb-6 flex justify-between items-start">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Floor Insight</span>
+<h3 class="text-headline-md font-headline-md">Spatial Utilization</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">view_in_ar</span>
+</div>
+<div class="voxel-grid flex-1 items-center content-center mb-6">
+<!-- Row 1 -->
+<div class="voxel bg-signal-blue/20 border border-signal-blue/40 rounded-sm" style="--z: 5px"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-rose/40 border border-signal-rose/60 rounded-sm" style="--z: 10px"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-blue/60 border border-signal-blue rounded-sm" style="--z: 15px"></div>
+<div class="voxel bg-signal-blue/40 border border-signal-blue/60 rounded-sm" style="--z: 8px"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<!-- Row 2 -->
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-blue/30 border border-signal-blue/50 rounded-sm" style="--z: 4px"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-rose/20 border border-signal-rose/40 rounded-sm" style="--z: 3px"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-blue/20 border border-signal-blue/40 rounded-sm"></div>
+<div class="voxel bg-signal-blue/50 border border-signal-blue/70 rounded-sm" style="--z: 12px"></div>
+<!-- Row 3 -->
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-blue/40 border border-signal-blue/60 rounded-sm" style="--z: 6px"></div>
+<div class="voxel bg-signal-blue/20 border border-signal-blue/40 rounded-sm"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+<div class="voxel bg-signal-rose/60 border border-signal-rose rounded-sm" style="--z: 20px"></div>
+<div class="voxel bg-surface-container-highest border border-outline-variant rounded-sm"></div>
+</div>
+<!-- Heatmap Legend -->
+<div class="flex items-center justify-between text-[10px] text-on-surface-variant font-data-mono">
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 bg-signal-rose rounded-full"></div>
+<span class="">BOTTLENECK</span>
+</div>
+<div class="flex items-center gap-1">
+<div class="w-2 h-2 bg-signal-blue rounded-full"></div>
+<span class="">HIGH VELOCITY</span>
+</div>
+</div>
+</div>
+<!-- NEW: Actionable Intelligence Layer (Suggestion Box) -->
+<div class="col-span-12 bento-card p-4 border-primary/20 bg-primary/5 flex items-center gap-4">
+<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0 border border-primary/20">
+<span class="material-symbols-outlined text-primary">lightbulb</span>
+</div>
+<div class="flex-1">
+<p class="text-data-mono text-primary text-xs font-bold uppercase tracking-widest mb-0.5">Actionable Intelligence</p>
+<p class="text-body-md font-semibold text-on-surface">Slotting Optimization: <span class="text-on-surface-variant font-normal">Move Steel Rods to Zone A to reduce picking time by 12%</span></p>
+</div>
+<button class="px-4 py-2 bg-primary text-on-primary rounded-lg text-label-caps hover:brightness-110 transition-all">
+                Execute Transfer
+            </button>
+</div>
+<!-- Daily Movement -->
+<div class="col-span-12 bento-card p-6">
+<div class="flex justify-between items-center mb-6">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Intraday Movement</span>
+<h3 class="text-headline-md font-headline-md mt-1">Stock In vs. Stock Out</h3>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-signal-teal"></span>
+<span class="text-data-mono font-data-mono">IN (244)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-signal-rose"></span>
+<span class="text-data-mono font-data-mono">OUT (182)</span>
+</div>
+</div>
+</div>
+<div class="h-48 w-full flex items-end gap-2 px-2">
+<div class="flex-1 flex flex-col justify-end gap-1">
+<div class="w-full bg-signal-teal/30 h-[20%] rounded-t-sm"></div>
+<div class="w-full bg-signal-rose/30 h-[10%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1">
+<div class="w-full bg-signal-teal/30 h-[40%] rounded-t-sm"></div>
+<div class="w-full bg-signal-rose/30 h-[30%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1">
+<div class="w-full bg-signal-teal/30 h-[60%] rounded-t-sm"></div>
+<div class="w-full bg-signal-rose/30 h-[45%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1">
+<div class="w-full bg-signal-teal/30 h-[50%] rounded-t-sm"></div>
+<div class="w-full bg-signal-rose/30 h-[25%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1">
+<div class="w-full bg-signal-teal/50 h-[80%] rounded-t-sm"></div>
+<div class="w-full bg-signal-rose/50 h-[60%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1">
+<div class="w-full bg-signal-teal/30 h-[55%] rounded-t-sm"></div>
+<div class="w-full bg-signal-rose/30 h-[40%] rounded-t-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Table (Glassmorphism) -->
+<section class="-mt-8">
+<div class="glass-surface glass-blur border border-outline-variant rounded-2xl overflow-hidden skeuo-shadow shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center bg-white/5">
+<h3 class="text-headline-md font-headline-md flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">history</span>
+                    Recent Stock Activity
+                </h3>
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full border border-outline-variant">
+<span class="w-2 h-2 rounded-full bg-signal-teal animate-pulse"></span>
+<span class="text-data-mono font-data-mono text-xs">Live Feed</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-label-caps font-label-caps text-on-surface-variant border-b border-outline-variant/30 bg-surface-container-low/50">
+<th class="px-6 py-3">Item Identity</th>
+<th class="px-6 py-3">Status</th>
+<th class="px-6 py-3">Quantity</th>
+<th class="px-6 py-3">Location</th>
+<th class="px-6 py-3">Timestamp</th>
+<th class="px-6 text-right py-3">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-2">
+<div class="flex flex-col">
+<span class="text-body-md font-bold text-on-surface">Final Product A</span>
+<span class="text-data-mono text-[10px] text-on-surface-variant">SKU-8821-XP</span>
+</div>
+</td>
+<td class="px-6 py-2">
+<span class="px-3 py-1 bg-signal-teal/10 text-signal-teal border border-signal-teal/20 rounded-full text-[10px] font-bold tracking-widest uppercase bg-signal-teal/20">IN</span>
+</td>
+<td class="px-6 font-data-mono text-on-surface py-2">150 Units</td>
+<td class="px-6 text-on-surface-variant py-2">Warehouse-01</td>
+<td class="px-6 text-data-mono text-xs opacity-60 py-2">10:45 AM</td>
+<td class="px-6 text-right py-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg transition-colors group-hover:text-primary">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-2">
+<div class="flex flex-col">
+<span class="text-body-md font-bold text-on-surface">Cement 50kg</span>
+<span class="text-data-mono text-[10px] text-on-surface-variant">CON-004-MAT</span>
+</div>
+</td>
+<td class="px-6 py-2">
+<span class="px-3 py-1 bg-signal-rose/10 text-signal-rose border border-signal-rose/20 rounded-full text-[10px] font-bold tracking-widest uppercase bg-signal-rose/20">OUT</span>
+</td>
+<td class="px-6 font-data-mono text-on-surface py-2">40 Bags</td>
+<td class="px-6 text-on-surface-variant py-2">Yard-B</td>
+<td class="px-6 text-data-mono text-xs opacity-60 py-2">09:12 AM</td>
+<td class="px-6 text-right py-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg transition-colors group-hover:text-primary">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-2">
+<div class="flex flex-col">
+<span class="text-body-md font-bold text-on-surface">Steel Rods 10mm</span>
+<span class="text-data-mono text-[10px] text-on-surface-variant">MET-229-STR</span>
+</div>
+</td>
+<td class="px-6 py-2">
+<span class="px-3 py-1 bg-signal-teal/10 text-signal-teal border border-signal-teal/20 rounded-full text-[10px] font-bold tracking-widest uppercase bg-signal-teal/20">IN</span>
+</td>
+<td class="px-6 font-data-mono text-on-surface py-2">500 Kgs</td>
+<td class="px-6 text-on-surface-variant py-2">Warehouse-03</td>
+<td class="px-6 text-data-mono text-xs opacity-60 py-2">08:30 AM</td>
+<td class="px-6 text-right py-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg transition-colors group-hover:text-primary">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-2">
+<div class="flex flex-col">
+<span class="text-body-md font-bold text-on-surface">Paint White 20L</span>
+<span class="text-data-mono text-[10px] text-on-surface-variant">PNT-881-WHT</span>
+</div>
+</td>
+<td class="px-6 py-2">
+<span class="px-3 py-1 bg-signal-rose/10 text-signal-rose border border-signal-rose/20 rounded-full text-[10px] font-bold tracking-widest uppercase bg-signal-rose/20">OUT</span>
+</td>
+<td class="px-6 font-data-mono text-on-surface py-2">12 Buckets</td>
+<td class="px-6 text-on-surface-variant py-2">Interior Hub</td>
+<td class="px-6 text-data-mono text-xs opacity-60 py-2">Yesterday</td>
+<td class="px-6 text-right py-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg transition-colors group-hover:text-primary">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 bg-surface-container-highest/30 flex justify-between items-center">
+<span class="text-data-mono text-xs text-on-surface-variant">Showing 4 of 1,020 global movements</span>
+<button class="text-signal-blue font-bold text-label-caps flex items-center gap-1 hover:underline">
+                    VIEW FULL LEDGER <span class="material-symbols-outlined text-[16px]">arrow_right_alt</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const counters = document.querySelectorAll('.font-display-kpi');
+        counters.forEach(counter => {
+            const textValue = counter.innerText.replace(/,/g, '');
+            const target = parseInt(textValue);
+            if (isNaN(target)) return;
+            
+            let count = 0;
+            const increment = target / 50;
+            const updateCount = () => {
+                if (count < target) {
+                    count += increment;
+                    counter.innerText = Math.ceil(count).toLocaleString();
+                    setTimeout(updateCount, 20);
+                } else {
+                    counter.innerText = target.toLocaleString();
+                }
+            };
+            updateCount();
+        });
+    });
+</script>
+
+
+</body></html>

@@ -5,6 +5,7 @@ import {
   ShieldAlert, Hash
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getUser, hasPermission } from '../utils/auth';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -34,6 +35,13 @@ const StockOutPage = () => {
   // Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  // User permissions
+  const user = getUser();
+  const role = user?.role || 'Viewer';
+  const canAdd = hasPermission(role, 'add');
+  const canDelete = hasPermission(role, 'delete');
+  const showForm = canAdd;
 
   useEffect(() => {
     fetchData();
@@ -206,6 +214,7 @@ const StockOutPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column - Form Card */}
+        {showForm && (
         <div className="col-span-12 lg:col-span-4 bg-[#161B22] border border-white/5 rounded-xl p-6 skeuo-shadow">
           <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6">
             <span className="text-[10px] font-mono tracking-widest text-[#8B949E] uppercase font-bold flex items-center gap-1.5">
@@ -343,9 +352,10 @@ const StockOutPage = () => {
             </div>
           </form>
         </div>
+        )}
 
         {/* Right Column - Data Table Card */}
-        <div className="col-span-12 lg:col-span-8 bg-[#161B22] border border-white/5 rounded-xl overflow-hidden skeuo-shadow">
+        <div className={`col-span-12 ${showForm ? 'lg:col-span-8' : 'lg:col-span-12'} bg-[#161B22] border border-white/5 rounded-xl overflow-hidden skeuo-shadow`}>
           <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/2">
             <h3 className="text-sm font-bold text-[#E6EDF3] font-mono uppercase tracking-wider flex items-center gap-2">
               <Database size={14} className="text-[#58A6FF]" />
@@ -378,7 +388,7 @@ const StockOutPage = () => {
                     <th className="px-6 py-3.5">Item</th>
                     <th className="px-6 py-3.5">Qty</th>
                     <th className="px-6 py-3.5">Location</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
+                    {canDelete && <th className="px-6 py-3.5 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -392,17 +402,19 @@ const StockOutPage = () => {
                       <td className="px-6 py-3 text-xs font-bold text-[#E6EDF3] whitespace-nowrap">{item.itemName?.itemName || 'N/A'}</td>
                       <td className="px-6 py-3 text-xs font-bold text-[#EF4444] font-mono whitespace-nowrap">-{item.qtyIssued}</td>
                       <td className="px-6 py-3 text-xs text-[#8B949E] whitespace-nowrap">{item.location?.locationName || 'N/A'}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end">
-                          <button 
-                            onClick={() => confirmDelete(item)}
-                            className="p-1.5 bg-[#EF4444]/10 text-red-400 rounded hover:bg-[#EF4444]/25 border border-red-500/20 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
+                      {canDelete && (
+                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end">
+                            <button 
+                              onClick={() => confirmDelete(item)}
+                              className="p-1.5 bg-[#EF4444]/10 text-red-400 rounded hover:bg-[#EF4444]/25 border border-red-500/20 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
