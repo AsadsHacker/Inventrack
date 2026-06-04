@@ -6,7 +6,7 @@ const Layout = ({ children, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex bg-[#f5f5f5] min-h-screen font-inter">
+    <div className="flex bg-[#0D1117] min-h-screen">
       <Sidebar onLogout={onLogout} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       
       {/* Main Content Area */}
