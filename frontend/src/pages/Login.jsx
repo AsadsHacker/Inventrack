@@ -54,7 +54,7 @@ const Login = ({ onLogin }) => {
         {/* Background image */}
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: 'url(https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200)',
+          backgroundImage: 'url(https://media.istockphoto.com/id/1712798955/vector/digital-warehouse.jpg?s=612x612&w=0&k=20&c=ZE_eh1R0gKfJUEXDrO7-vtS1fqAzBkv7OfnCyTpUk_0=)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }} />

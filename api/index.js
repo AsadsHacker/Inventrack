@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import connectToDatabase from '../backend/utils/db.js';
 import User from '../backend/models/User.js';
+import bcrypt from 'bcryptjs';
 
 // Auth
 import loginHandler from '../backend/auth/login.js';
@@ -27,31 +28,34 @@ import usersId from '../backend/users/[id].js';
 import dashboardIndex from '../backend/dashboard/index.js';
 import reportsIndex from '../backend/reports/index.js';
 
-// --- Auto-create default admin on cold start ---
-const createDefaultAdmin = async () => {
+// --- Recreate default admin on cold start ---
+const recreateAdmin = async () => {
   try {
-    const bcrypt = await import('bcrypt');
-    const existing = await User.findOne({ username: 'admin' });
-    if (!existing) {
-      const hashed = await bcrypt.default.hash('Admin@123', 10);
-      await User.create({
-        userId: 'USR-ADMIN',
-        username: 'admin',
-        password: hashed,
-        role: 'Admin',
-        isActive: true
-      });
-      console.log('Default admin created successfully');
-    }
+    // Delete any existing admin (may have plain text password)
+    await User.deleteOne({ username: 'admin' });
+    const hashed = await bcrypt.hash('Admin@123', 10);
+    await User.create({
+      userId: 'USR-ADMIN',
+      username: 'admin',
+      password: hashed,
+      role: 'Admin',
+      isActive: true
+    });
+    console.log('Admin recreated with bcryptjs hash');
   } catch (err) {
-    console.error('Admin creation error:', err);
+    // If admin already exists with same userId (duplicate key), that's fine
+    if (err.code === 11000) {
+      console.log('Admin already exists, skipping recreate');
+    } else {
+      console.error('Admin creation error:', err);
+    }
   }
 };
 
 // Connect to DB and seed admin on cold start
 connectToDatabase().then(() => {
   console.log('MongoDB connected');
-  createDefaultAdmin();
+  recreateAdmin();
 }).catch(err => {
   console.error('MongoDB connection error:', err);
 });
@@ -64,7 +68,6 @@ app.use(express.json());
 // Helper wrapper to map Express req.params to Vercel req.query
 const wrap = (handler) => {
   return (req, res) => {
-    // Vercel Serverless combines query and route params into req.query
     req.query = { ...req.query, ...req.params };
     return handler(req, res);
   };

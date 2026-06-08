@@ -1,5 +1,6 @@
 import connectToDatabase from '../utils/db.js';
 import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,8 +28,9 @@ export default async function handler(req, res) {
       }
       const userId = `USR-${nextNum.toString().padStart(2, '0')}`;
 
-      // Simple hash for demo — in production use bcrypt
-      const doc = new User({ userId, username, password, role: role || 'Viewer' });
+      // Hash password with bcryptjs before storing
+      const hashed = await bcrypt.hash(password, 10);
+      const doc = new User({ userId, username, password: hashed, role: role || 'Viewer' });
       await doc.save();
       const safe = doc.toObject();
       delete safe.password;
