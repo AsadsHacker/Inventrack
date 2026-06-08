@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import connectToDatabase from '../backend/utils/db.js';
+import User from '../backend/models/User.js';
 
 // Auth
 import loginHandler from '../backend/auth/login.js';
@@ -24,6 +26,35 @@ import usersIndex from '../backend/users/index.js';
 import usersId from '../backend/users/[id].js';
 import dashboardIndex from '../backend/dashboard/index.js';
 import reportsIndex from '../backend/reports/index.js';
+
+// --- Auto-create default admin on cold start ---
+const createDefaultAdmin = async () => {
+  try {
+    const bcrypt = await import('bcrypt');
+    const existing = await User.findOne({ username: 'admin' });
+    if (!existing) {
+      const hashed = await bcrypt.default.hash('Admin@123', 10);
+      await User.create({
+        userId: 'USR-ADMIN',
+        username: 'admin',
+        password: hashed,
+        role: 'Admin',
+        isActive: true
+      });
+      console.log('Default admin created successfully');
+    }
+  } catch (err) {
+    console.error('Admin creation error:', err);
+  }
+};
+
+// Connect to DB and seed admin on cold start
+connectToDatabase().then(() => {
+  console.log('MongoDB connected');
+  createDefaultAdmin();
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
+});
 
 const app = express();
 

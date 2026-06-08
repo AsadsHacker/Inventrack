@@ -11,18 +11,29 @@ export default async function handler(req, res) {
 
   try {
     await connectToDatabase();
+    const bcrypt = await import('bcrypt');
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
 
     // Seed default admin if no users exist
     const count = await User.countDocuments({});
     if (count === 0) {
-      await new User({ userId: 'USR-01', username: 'admin', password: 'Admin@123', role: 'Admin' }).save();
+      const hashed = await bcrypt.default.hash('Admin@123', 10);
+      await new User({ userId: 'USR-ADMIN', username: 'admin', password: hashed, role: 'Admin' }).save();
     }
 
     const user = await User.findOne({ username, isActive: true });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    if (user.password !== password) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Compare with bcrypt — fallback to plain text for legacy accounts
+    let passwordMatch = false;
+    try {
+      passwordMatch = await bcrypt.default.compare(password, user.password);
+    } catch {
+      // If bcrypt fails (not a hash), try plain text match
+      passwordMatch = (user.password === password);
+    }
+    if (!passwordMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
     // Simple token (in production use JWT)
     const token = Buffer.from(JSON.stringify({ id: user._id, username: user.username, role: user.role })).toString('base64');
